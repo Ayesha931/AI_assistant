@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Berry AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f0f4f8;
+      font-family: 'Montserrat', sans-serif;
+      color: #333;
+    }
+    .container {
+      margin-top: 100px;
+      text-align: center;
+    }
+    .task-button {
+      width: 200px;
+      margin: 20px;
+      padding: 20px;
+      font-size: 18px;
+      background-color: #d9534f; /* Berry color */
+      color: white;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .task-button:hover {
+      background-color: #c9302c;
+    }
+    .mic-icon {
+      font-size: 30px;
+      margin-top: 20px;
+      color: #d9534f;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    .mic-icon:hover {
+      color: #c9302c;
+    }
+    .response-box {
+      margin-top: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background-color: #fff;
+      text-align: left;
+    }
+    .strawberry {
+      width: 50px;
+      height: 70px;
+      background-color: #d9534f;
+      border-radius: 50% 50% 0 0;
+      position: relative;
+      display: inline-block;
+      margin-top: 20px;
+    }
+    .strawberry::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 15px;
+      width: 20px;
+      height: 20px;
+      background-color: #5cb85c;
+      border-radius: 50%;
+    }
+    .strawberry::after {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 5px;
+      width: 40px;
+      height: 10px;
+      background-color: #5cb85c;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Task Selection Screen -->
+  <div class="container">
+    <h1>Welcome to Berry AI</h1>
+    <p>Select a Task Below</p>
+
+    <button class="task-button" onclick="selectTask('coding')">Coding Assistance</button>
+    <button class="task-button" onclick="selectTask('research')">Research Assistance</button>
+
+    <div class="mic-icon">
+      <i class="bi bi-mic-fill"></i>
+      <p>Speak Your Query</p>
+    </div>
+
+    <div class="strawberry"></div>
+  </div>
+
+  <!-- Demo Page -->
+  <div class="container" id="demoPage" style="display: none;">
+    <h2 id="taskTitle"></h2>
+
+    <div class="input-group mb-3">
+      <input type="text" class="form-control" placeholder="Type your query here..." id="userInput">
+      <span class="input-group-text"><i class="bi bi-mic-fill"></i></span>
+    </div>
+
+    <button class="btn btn-primary" onclick="submitQuery()">Submit</button>
+
+    <div class="response-box" id="responseBox">
+      <p>AI-generated responses will appear here.</p>
+    </div>
+
+    <button class="btn btn-secondary mt-3" onclick="resetPage()">Reset</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    let selectedTask = '';
+
+    function selectTask(task) {
+      selectedTask = task; // Store the user's choice
+      document.querySelector('.container').style.display = 'none';
+      document.getElementById('demoPage').style.display = 'block';
+      document.getElementById('taskTitle').innerText = task.charAt(0).toUpperCase() + task.slice(1) + ' Assistant';
+    }
+
+    async function submitQuery() {
+      const query = document.getElementById('userInput').value;
+
+      if (!selectedTask || !query) {
+        alert("Please select a task and enter a query.");
+        return;
+      }
+
+      // Display processing message
+      document.getElementById('responseBox').innerHTML = `<p>Processing your query: ${query}</p>`;
+
+      // Connect with the API
+      const response = await fetch('/generate_response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ choice: selectedTask, query: query })
+      });
+
+      const data = await response.json();
+      document.getElementById('responseBox').innerHTML = `<p>${data.response}</p>`;
+    }
+
+    function resetPage() {
+      document.getElementById('demoPage').style.display = 'none';
+      document.querySelector('.container').style.display = 'block';
+      document.getElementById('userInput').value = '';
+      document.getElementById('responseBox').innerHTML = '<p>AI-generated responses will appear here.</p>';
+    }
+
+    // Voice Recognition Setup
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      document.getElementById('userInput').value = transcript;
+      submitQuery();
+    };
+
+    document.body.onkeydown = (event) => {
+      if (event.code === 'Space') {
+        recognition.start();
+      }
+    };
+
+    document.body.onkeyup = (event) => {
+      if (event.code === 'Space') {
+        recognition.stop();
+      }
+    };
+  </script>
+
+</body>
+</html>
